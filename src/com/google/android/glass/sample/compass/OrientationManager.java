@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+// Uses: https://github.com/daaxel/SpacebrewClient
+
 package com.google.android.glass.sample.compass;
 
 import com.google.android.glass.sample.compass.util.MathUtils;
@@ -47,7 +49,7 @@ import at.ac.sbg.icts.spacebrew.client.publisher.RangePublisher;
  */
 public class OrientationManager implements SpacebrewClientCallback {
 
-	SpacebrewClient client = new SpacebrewClient(this, "ws://spacebrew.madsci1.havasworldwide.com:9000", "SpacebrewClient", "A simple Java client");
+	SpacebrewClient client = new SpacebrewClient(this, "ws://madsci.havasworldwide.com:9000", "SpacebrewClient", "A simple Java client");
 	RangePublisher glassXRangePublisher;
 	RangePublisher glassYRangePublisher;
 	
@@ -75,11 +77,20 @@ public class OrientationManager implements SpacebrewClientCallback {
      */
     private static final int ARM_DISPLACEMENT_DEGREES = 6;
 
+    int map(int x, int in_min, int in_max, int out_min, int out_max)
+    {
+      int t = (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+      if (t < out_min) {t = out_min;}
+      if (t > out_max) {t = out_max;}
+      
+      return t;
+    }
+    
     @Override
     public void onOpen()
     {
      
-    	client.send("glassX", 15);
+    	//client.send("glassX", 15);
     }
 
     @Override
@@ -131,11 +142,19 @@ public class OrientationManager implements SpacebrewClientCallback {
     private boolean mTracking;
     private float mHeading;
     private float mPitch;
+    
+    private int t_mPitch = 0;
+    private int last_mPitch = -1;
+    private int t_mHeading = 0;
+    private int last_mHeading = -1;
+    private int initHeadingCountdown = 10;
 
     private Location mLocation;
     private GeomagneticField mGeomagneticField;
     private boolean mHasInterference;
 
+    private int initHeading = -500;
+    
     /**
      * The sensor listener used by the orientation manager.
      */
@@ -171,13 +190,32 @@ public class OrientationManager implements SpacebrewClientCallback {
 
                 notifyOrientationChanged();
                 
-                client.send("glassX", (int) mHeading);
-                client.send("glassY", (int) mPitch);
                 
+                if (initHeadingCountdown--  > 0) {
+                	initHeading = (int) mHeading;
+                } else {
+                	t_mHeading = (int)mHeading - 140;
+                	t_mHeading = map((int)t_mHeading,-55,55,0,1023);
+                	//t_mHeading = map((int)mHeading,0,360,0,1023);
+
+                    if (t_mHeading != last_mHeading) {
+    	
+                    	client.send("glassX", t_mHeading);
+                    	last_mHeading = t_mHeading;
+                    }
+                }
+
+                t_mPitch = map((int)mPitch,35,-35,0,1023);
+                if (t_mPitch != last_mPitch) {
+	
+                	client.send("glassY", t_mPitch);
+                	last_mPitch = t_mPitch;
+                }
             }
         }
     };
 
+    
     /**
      * The location listener used by the orientation manager.
      */
@@ -217,7 +255,6 @@ public class OrientationManager implements SpacebrewClientCallback {
         mLocationManager = locationManager;
         mListeners = new LinkedHashSet<OnChangedListener>();
         
-       	//System.out.println("testing 1");
     	Log.v("main activity","onCreate");
 
         client.connect();
@@ -226,11 +263,11 @@ public class OrientationManager implements SpacebrewClientCallback {
         glassXRangePublisher = new RangePublisher("glassX", 0, client);
         glassXRangePublisher.setMinValue(0);
         glassXRangePublisher.setMaxValue(1023);
-		
+        
         glassYRangePublisher = new RangePublisher("glassY", 0, client);
         glassYRangePublisher.setMinValue(0);
         glassYRangePublisher.setMaxValue(1023);
- 
+ 		
         Log.v("sbwrapper","add publish");        
     }
 
@@ -333,6 +370,11 @@ public class OrientationManager implements SpacebrewClientCallback {
         return mHeading;
     }
 
+    public int getInitHeading() {
+    	return initHeading;
+    }
+ 
+
     /**
      * Gets the user's current pitch (head tilt angle), in degrees. The result is guaranteed to be
      * between -90 and 90.
@@ -357,7 +399,7 @@ public class OrientationManager implements SpacebrewClientCallback {
      */
     private void notifyOrientationChanged() {
         for (OnChangedListener listener : mListeners) {
-            listener.onOrientationChanged(this);
+            //listener.onOrientationChanged(this);
         }
     }
 
@@ -366,7 +408,7 @@ public class OrientationManager implements SpacebrewClientCallback {
      */
     private void notifyLocationChanged() {
         for (OnChangedListener listener : mListeners) {
-            listener.onLocationChanged(this);
+            //listener.onLocationChanged(this);
         }
     }
 

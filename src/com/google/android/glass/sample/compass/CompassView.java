@@ -106,7 +106,7 @@ public class CompassView extends View { //implements SpacebrewClientCallback {
     private final float[] deltaRotationVector = new float[4];
     private float timestamp;
 
-    private String out = "boner string";
+    //private String out = "boner string";
     
     /*
     public void onSensorChanged(SensorEvent event) {
@@ -277,25 +277,35 @@ public class CompassView extends View { //implements SpacebrewClientCallback {
         float centerX = getWidth() / 2.0f;
         float centerY = getHeight() / 2.0f;
 
+        String outPitch;
+        String outHeading;
+        String outInitHeading;
+    
         canvas.save();
         
-        out = String.valueOf(mOrientation.getPitch());
+        outPitch = "P " + String.valueOf(mOrientation.getPitch());
+        outHeading = "H " + String.valueOf(mOrientation.getHeading());
+        outInitHeading = "I " + String.valueOf(mOrientation.getInitHeading());
         
         mPaint.setColor(Color.WHITE);
-        mPaint.getTextBounds(out, 0, out.length(), mTextBounds);
-        canvas.drawText(out,mTextBounds.width()/2, mTextBounds.height(), mPaint);
-                
+        mPaint.getTextBounds(outPitch, 0, outPitch.length(), mTextBounds);
+
+        canvas.drawText(outPitch,mTextBounds.width()/2, mTextBounds.height(), mPaint);
+        canvas.drawText(outHeading,mTextBounds.width()/2, mTextBounds.height() + 70, mPaint);
+        canvas.drawText(outInitHeading,mTextBounds.width()/2, mTextBounds.height() + 140, mPaint);
+        
         canvas.translate(-mAnimatedHeading * pixelsPerDegree + centerX, centerY);
 
         // In order to ensure that places on a boundary close to 0 or 360 get drawn correctly, we
         // draw them three times; once to the left, once at the "true" bearing, and once to the
         // right.
+        /*
         for (int i = -1; i <= 1; i++) {
             drawPlaces(canvas, pixelsPerDegree, i * pixelsPerDegree * 360);
         }
-
-        drawCompassDirections(canvas, pixelsPerDegree);
-
+		*/
+ 
+        //drawCompassDirections(canvas, pixelsPerDegree);
         canvas.restore();
 
         mPaint.setColor(NEEDLE_COLOR);
@@ -407,10 +417,12 @@ public class CompassView extends View { //implements SpacebrewClientCallback {
 
                         canvas.drawBitmap(mPlaceBitmap, offset + bearing * pixelsPerDegree
                                 - PLACE_PIN_WIDTH / 2, textBounds.top + 2, mPaint);
+
                         canvas.drawText(text,
                                 offset + bearing * pixelsPerDegree + PLACE_PIN_WIDTH / 2
                                 + PLACE_TEXT_MARGIN, textBounds.top + PLACE_TEXT_HEIGHT,
                                 mPlacePaint);
+                        
                     }
                 }
             }
